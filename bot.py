@@ -1,8 +1,8 @@
 import os
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-CHANNEL_ID = os.getenv("CHANNEL_ID")
+BOT_TOKEN = os.getenv("8934609911:AAFJ1_IOCq5C-IOjyHnCM69kH_LggVi8H4c")
+CHANNEL_ID = os.getenv("@MRBEAN_GAMING")
 
 BUTTON_TEXT = "🎁 𝐆𝐈𝐅𝐓 𝐂𝐎𝐃𝐄"
 BUTTON_URL = "https://t.me/+sbu2FCVFGshjOTg1"

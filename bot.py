@@ -1,97 +1,111 @@
-import os
 import json
-import asyncio
+import os
 
 from telegram import (
     Update,
-    Bot,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
 )
 from telegram.ext import (
     Application,
     CommandHandler,
-    MessageHandler,
     CallbackQueryHandler,
+    MessageHandler,
     ContextTypes,
     filters,
 )
 
-# =========================
+# ==================================================
 # CONFIG
-# =========================
+# ==================================================
 
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+BOT_TOKEN = "8934609911:AAEmljKQ4s6lDD_nUlw57P0miQTbBMDshEY"
+
 CHANNEL_ID = "@MRBEAN_GAMING"
 
-# Apna Telegram numeric user ID yahan daalo
+# Apna numeric Telegram User ID yahan daalo
 ADMIN_ID = 1966787250
 
 DATA_FILE = "bot_data.json"
 
-# =========================
-# DATA
-# =========================
+
+# ==================================================
+# SAVED DATA
+# ==================================================
 
 def load_data():
     if not os.path.exists(DATA_FILE):
         return {"emojis": {}}
 
     try:
-        with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except:
+        with open(DATA_FILE, "r", encoding="utf-8") as file:
+            return json.load(file)
+    except Exception:
         return {"emojis": {}}
 
 
 def save_data(data):
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+    with open(DATA_FILE, "w", encoding="utf-8") as file:
+        json.dump(data, file, indent=2, ensure_ascii=False)
 
 
 data = load_data()
 
 
-# =========================
+# ==================================================
 # ADMIN CHECK
-# =========================
+# ==================================================
 
 def is_admin(user_id):
     return user_id == ADMIN_ID
 
 
-# =========================
-# START
-# =========================
+# ==================================================
+# /START
+# ==================================================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not is_admin(update.effective_user.id):
-        await update.message.reply_text("❌ You are not authorized.")
+        await update.message.reply_text(
+            "❌ You are not authorized."
+        )
         return
 
     keyboard = [
         [
-            InlineKeyboardButton("📝 Create Post", callback_data="create"),
-            InlineKeyboardButton("✨ Save Emoji", callback_data="emoji"),
+            InlineKeyboardButton(
+                "📝 Create Post",
+                callback_data="create"
+            )
         ],
         [
-            InlineKeyboardButton("📋 Saved Emojis", callback_data="list"),
+            InlineKeyboardButton(
+                "✨ Save Emoji",
+                callback_data="save_emoji"
+            ),
+            InlineKeyboardButton(
+                "📋 Saved Emojis",
+                callback_data="list_emoji"
+            )
         ],
     ]
 
     await update.message.reply_text(
-        "🤖 **Post Manager**\n\nChoose an option:",
-        reply_markup=InlineKeyboardMarkup(keyboard),
-        parse_mode="Markdown",
+        "🤖 Post Manager\n\n"
+        "Choose an option:",
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
 
-# =========================
-# BUTTON HANDLER
-# =========================
+# ==================================================
+# CALLBACK HANDLER
+# ==================================================
 
-async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def callback_handler(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
 
     query = update.callback_query
     await query.answer()
@@ -101,56 +115,102 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     action = query.data
 
+    # --------------------------
+    # CREATE POST
+    # --------------------------
+
+    if action == "create":
+
+        context.user_data.clear()
+
+        context.user_data["mode"] = "media"
+        context.user_data["buttons"] = []
+
+        await query.message.reply_text(
+            "📝 Create Post\n\n"
+            "Photo, Video ya File bhejo.\n"
+            "Caption bhi media ke saath bhej sakte ho."
+        )
+
+    # --------------------------
     # SAVE EMOJI
-    if action == "emoji":
+    # --------------------------
+
+    elif action == "save_emoji":
 
         context.user_data["mode"] = "save_emoji"
 
         await query.message.reply_text(
-            "✨ Ab mujhe ek **Premium Custom Emoji** bhejo.\n\n"
-            "Main uska custom emoji ID save kar lunga."
+            "✨ Ab Telegram Premium Custom Emoji bhejo.\n\n"
+            "Main uska Custom Emoji ID detect karunga."
         )
 
+    # --------------------------
     # LIST EMOJIS
-    elif action == "list":
+    # --------------------------
+
+    elif action == "list_emoji":
 
         emojis = data.get("emojis", {})
 
         if not emojis:
             await query.message.reply_text(
-                "📋 Abhi koi custom emoji saved nahi hai."
+                "📋 Abhi koi emoji saved nahi hai."
             )
             return
 
-        text = "✨ **Saved Custom Emojis**\n\n"
+        text = "✨ Saved Custom Emojis\n\n"
 
         for name, emoji_id in emojis.items():
-            text += f"• `{name}` → `{emoji_id}`\n"
+            text += f"• {name} → `{emoji_id}`\n"
 
         await query.message.reply_text(
             text,
             parse_mode="Markdown"
         )
 
-    # CREATE POST
-    elif action == "create":
+    # --------------------------
+    # ADD BUTTON
+    # --------------------------
 
-        context.user_data.clear()
-        context.user_data["mode"] = "waiting_media"
-        context.user_data["buttons"] = []
+    elif action == "add_button":
+
+        buttons = context.user_data.get("buttons", [])
+
+        if len(buttons) >= 3:
+            await query.message.reply_text(
+                "⚠️ Maximum 3 buttons allowed."
+            )
+            return
+
+        context.user_data["mode"] = "button_text"
+
+        number = len(buttons) + 1
 
         await query.message.reply_text(
-            "📝 **Create Post**\n\n"
-            "Ab mujhe Photo, Video ya File bhejo.\n\n"
-            "Uske saath caption bhi bhej sakte ho."
+            f"🔘 Button {number}\n\n"
+            "Button ka text bhejo.\n\n"
+            "Example:\n"
+            "🎁 GET OFFER"
         )
 
+    # --------------------------
+    # PUBLISH
+    # --------------------------
 
-# =========================
+    elif action == "publish":
+
+        await publish_post(update, context)
+
+
+# ==================================================
 # MESSAGE HANDLER
-# =========================
+# ==================================================
 
-async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def message_handler(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
 
     if not update.effective_user:
         return
@@ -159,103 +219,128 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     message = update.message
+
     mode = context.user_data.get("mode")
 
-    # -------------------------
+    # ==================================================
     # SAVE CUSTOM EMOJI
-    # -------------------------
+    # ==================================================
 
     if mode == "save_emoji":
 
         entities = message.entities or []
 
+        custom_emoji_id = None
+
         for entity in entities:
 
             if entity.type == "custom_emoji":
 
-                emoji_id = entity.custom_emoji_id
+                custom_emoji_id = entity.custom_emoji_id
+                break
 
-                context.user_data["last_emoji_id"] = emoji_id
+        if not custom_emoji_id:
 
-                await message.reply_text(
-                    "✨ Emoji mil gaya!\n\n"
-                    "Ab iska naam bhejo.\n"
-                    "Example: `gift`",
-                    parse_mode="Markdown",
-                )
+            await message.reply_text(
+                "❌ Custom emoji detect nahi hua.\n\n"
+                "Telegram Premium Custom Emoji directly bhejo."
+            )
 
-                context.user_data["mode"] = "emoji_name"
-                return
+            return
+
+        context.user_data["emoji_id"] = custom_emoji_id
+        context.user_data["mode"] = "emoji_name"
 
         await message.reply_text(
-            "❌ Custom emoji detect nahi hua.\n"
-            "Telegram ka Premium Custom Emoji directly bhejo."
+            "✅ Emoji detect ho gaya!\n\n"
+            "Ab iska naam bhejo.\n\n"
+            "Example:\n"
+            "gift"
         )
 
         return
 
-    # -------------------------
+    # ==================================================
     # EMOJI NAME
-    # -------------------------
+    # ==================================================
 
     if mode == "emoji_name":
 
         name = message.text.strip()
-        emoji_id = context.user_data.get("last_emoji_id")
+
+        emoji_id = context.user_data.get("emoji_id")
 
         if not emoji_id:
-            await message.reply_text("❌ Emoji ID missing.")
+
+            await message.reply_text(
+                "❌ Emoji ID nahi mila."
+            )
+
             return
 
         data.setdefault("emojis", {})[name] = emoji_id
+
         save_data(data)
 
         context.user_data.clear()
 
         await message.reply_text(
-            f"✅ Saved!\n\n"
-            f"Name: `{name}`\n"
+            f"✅ Custom emoji saved!\n\n"
+            f"Name: {name}\n"
             f"ID: `{emoji_id}`",
-            parse_mode="Markdown",
+            parse_mode="Markdown"
         )
 
         return
 
-    # -------------------------
+    # ==================================================
     # MEDIA
-    # -------------------------
+    # ==================================================
 
-    if mode == "waiting_media":
+    if mode == "media":
 
         if message.photo:
 
-            context.user_data["type"] = "photo"
-            context.user_data["file_id"] = message.photo[-1].file_id
-            context.user_data["caption"] = message.caption or ""
+            context.user_data["media_type"] = "photo"
+            context.user_data["file_id"] = (
+                message.photo[-1].file_id
+            )
+            context.user_data["caption"] = (
+                message.caption or ""
+            )
 
         elif message.video:
 
-            context.user_data["type"] = "video"
-            context.user_data["file_id"] = message.video.file_id
-            context.user_data["caption"] = message.caption or ""
+            context.user_data["media_type"] = "video"
+            context.user_data["file_id"] = (
+                message.video.file_id
+            )
+            context.user_data["caption"] = (
+                message.caption or ""
+            )
 
         elif message.document:
 
-            context.user_data["type"] = "document"
-            context.user_data["file_id"] = message.document.file_id
-            context.user_data["caption"] = message.caption or ""
+            context.user_data["media_type"] = "document"
+            context.user_data["file_id"] = (
+                message.document.file_id
+            )
+            context.user_data["caption"] = (
+                message.caption or ""
+            )
 
         else:
 
             await message.reply_text(
                 "❌ Sirf Photo, Video ya File bhejo."
             )
+
             return
 
         keyboard = [
             [
                 InlineKeyboardButton(
-                    "🔘 Add Button",
+                    "➕ Add Button",
                     callback_data="add_button"
                 )
             ],
@@ -264,142 +349,169 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "🚀 Publish",
                     callback_data="publish"
                 )
-            ],
+            ]
         ]
 
+        context.user_data["mode"] = "post_setup"
+
         await message.reply_text(
-            "✅ Media received.\n\n"
-            "Ab buttons add karo ya direct Publish karo.",
-            reply_markup=InlineKeyboardMarkup(keyboard),
+            "✅ Media received!\n\n"
+            "Ab 0–3 buttons add kar sakte ho.\n"
+            "Ya direct Publish kar sakte ho.",
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+
+        return
+
+    # ==================================================
+    # BUTTON TEXT
+    # ==================================================
+
+    if mode == "button_text":
+
+        text = message.text.strip()
+
+        if not text:
+
+            await message.reply_text(
+                "❌ Button text empty nahi ho sakta."
+            )
+
+            return
+
+        context.user_data["button_text"] = text
+        context.user_data["mode"] = "button_url"
+
+        await message.reply_text(
+            "🔗 Ab button ka URL bhejo.\n\n"
+            "Example:\n"
+            "https://example.com"
+        )
+
+        return
+
+    # ==================================================
+    # BUTTON URL
+    # ==================================================
+
+    if mode == "button_url":
+
+        url = message.text.strip()
+
+        if not (
+            url.startswith("http://")
+            or url.startswith("https://")
+            or url.startswith("tg://")
+        ):
+
+            await message.reply_text(
+                "❌ Valid URL bhejo.\n\n"
+                "Example:\n"
+                "https://example.com"
+            )
+
+            return
+
+        button_text = context.user_data.get(
+            "button_text"
+        )
+
+        buttons = context.user_data.setdefault(
+            "buttons",
+            []
+        )
+
+        buttons.append({
+            "text": button_text,
+            "url": url
+        })
+
+        context.user_data.pop(
+            "button_text",
+            None
         )
 
         context.user_data["mode"] = "post_setup"
 
-
-# =========================
-# ADD BUTTON
-# =========================
-
-async def add_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    query = update.callback_query
-    await query.answer()
-
-    if not is_admin(query.from_user.id):
-        return
-
-    buttons = context.user_data.get("buttons", [])
-
-    if len(buttons) >= 3:
-
-        await query.message.reply_text(
-            "⚠️ Maximum 3 buttons allowed."
-        )
-        return
-
-    context.user_data["mode"] = "button_text"
-
-    await query.message.reply_text(
-        f"🔘 Button {len(buttons) + 1}\n\n"
-        "Button ka text bhejo.\n"
-        "Example: `🎁 GET OFFER`",
-        parse_mode="Markdown",
-    )
-
-
-# =========================
-# BUTTON TEXT / URL
-# =========================
-
-async def button_text_or_url(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    if not is_admin(update.effective_user.id):
-        return
-
-    mode = context.user_data.get("mode")
-
-    if mode == "button_text":
-
-        context.user_data["temp_button_text"] = update.message.text
-
-        context.user_data["mode"] = "button_url"
-
-        await update.message.reply_text(
-            "🔗 Ab button ka URL bhejo."
-        )
-
-        return
-
-    if mode == "button_url":
-
-        url = update.message.text.strip()
-        text = context.user_data.get("temp_button_text")
-
-        buttons = context.user_data.setdefault("buttons", [])
-
-        buttons.append({
-            "text": text,
-            "url": url
-        })
-
-        context.user_data.pop("temp_button_text", None)
-
         if len(buttons) >= 3:
 
-            await update.message.reply_text(
-                "✅ 3 buttons added.\n\n"
-                "Ab Publish kar sakte ho."
+            await message.reply_text(
+                "✅ 3 buttons added!\n\n"
+                "Maximum 3 buttons reached.\n"
+                "Ab Publish kar sakte ho.",
+                reply_markup=InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton(
+                            "🚀 Publish",
+                            callback_data="publish"
+                        )
+                    ]
+                ])
             )
 
         else:
 
-            keyboard = [
-                [
-                    InlineKeyboardButton(
-                        "➕ Add Another",
-                        callback_data="add_button"
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        "🚀 Publish",
-                        callback_data="publish"
-                    )
-                ],
-            ]
-
-            await update.message.reply_text(
-                f"✅ Button {len(buttons)} added.\n\n"
-                "Aur button add karna hai ya Publish?",
-                reply_markup=InlineKeyboardMarkup(keyboard),
+            await message.reply_text(
+                f"✅ Button {len(buttons)} added!",
+                reply_markup=InlineKeyboardMarkup([
+                    [
+                        InlineKeyboardButton(
+                            "➕ Add Another",
+                            callback_data="add_button"
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            "🚀 Publish",
+                            callback_data="publish"
+                        )
+                    ]
+                ])
             )
 
-        context.user_data["mode"] = "post_setup"
+        return
 
 
-# =========================
-# PUBLISH
-# =========================
+# ==================================================
+# PUBLISH POST
+# ==================================================
 
-async def publish(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def publish_post(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
 
     query = update.callback_query
-    await query.answer()
 
-    if not is_admin(query.from_user.id):
-        return
+    media_type = context.user_data.get(
+        "media_type"
+    )
 
-    post_type = context.user_data.get("type")
-    file_id = context.user_data.get("file_id")
-    caption = context.user_data.get("caption", "")
-    buttons = context.user_data.get("buttons", [])
+    file_id = context.user_data.get(
+        "file_id"
+    )
 
-    if not post_type or not file_id:
+    caption = context.user_data.get(
+        "caption",
+        ""
+    )
+
+    buttons = context.user_data.get(
+        "buttons",
+        []
+    )
+
+    if not media_type or not file_id:
 
         await query.message.reply_text(
-            "❌ Pehle Photo, Video ya File send karo."
+            "❌ Pehle Photo, Video ya File bhejo."
         )
+
         return
+
+    # --------------------------
+    # CREATE BUTTONS
+    # --------------------------
 
     keyboard = []
 
@@ -407,7 +519,7 @@ async def publish(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         keyboard.append([
             InlineKeyboardButton(
-                button["text"],
+                text=button["text"],
                 url=button["url"]
             )
         ])
@@ -418,70 +530,61 @@ async def publish(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else None
     )
 
-    bot = context.bot
+    # --------------------------
+    # SEND TO CHANNEL
+    # --------------------------
 
-    if post_type == "photo":
+    try:
 
-        await bot.send_photo(
-            chat_id=CHANNEL_ID,
-            photo=file_id,
-            caption=caption,
-            reply_markup=reply_markup,
+        if media_type == "photo":
+
+            await context.bot.send_photo(
+                chat_id=CHANNEL_ID,
+                photo=file_id,
+                caption=caption,
+                reply_markup=reply_markup
+            )
+
+        elif media_type == "video":
+
+            await context.bot.send_video(
+                chat_id=CHANNEL_ID,
+                video=file_id,
+                caption=caption,
+                reply_markup=reply_markup
+            )
+
+        elif media_type == "document":
+
+            await context.bot.send_document(
+                chat_id=CHANNEL_ID,
+                document=file_id,
+                caption=caption,
+                reply_markup=reply_markup
+            )
+
+        await query.message.reply_text(
+            "✅ Post successfully published!"
         )
 
-    elif post_type == "video":
+        context.user_data.clear()
 
-        await bot.send_video(
-            chat_id=CHANNEL_ID,
-            video=file_id,
-            caption=caption,
-            reply_markup=reply_markup,
+    except Exception as error:
+
+        await query.message.reply_text(
+            f"❌ Publish failed:\n\n{error}"
         )
 
-    elif post_type == "document":
 
-        await bot.send_document(
-            chat_id=CHANNEL_ID,
-            document=file_id,
-            caption=caption,
-            reply_markup=reply_markup,
-        )
-
-    await query.message.reply_text(
-        "✅ **Published successfully!**",
-        parse_mode="Markdown",
-    )
-
-    context.user_data.clear()
-
-
-# =========================
-# CALLBACK ROUTER
-# =========================
-
-async def callback_router(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
-    query = update.callback_query
-
-    if query.data == "add_button":
-        await add_button(update, context)
-
-    elif query.data == "publish":
-        await publish(update, context)
-
-    else:
-        await button_handler(update, context)
-
-
-# =========================
+# ==================================================
 # MAIN
-# =========================
+# ==================================================
 
 def main():
 
     if not BOT_TOKEN:
         raise RuntimeError(
-            "BOT_TOKEN is missing from Railway Variables."
+            "BOT_TOKEN empty hai."
         )
 
     app = (
@@ -490,10 +593,17 @@ def main():
         .build()
     )
 
-    app.add_handler(CommandHandler("start", start))
+    app.add_handler(
+        CommandHandler(
+            "start",
+            start
+        )
+    )
 
     app.add_handler(
-        CallbackQueryHandler(callback_router)
+        CallbackQueryHandler(
+            callback_handler
+        )
     )
 
     app.add_handler(
@@ -503,7 +613,7 @@ def main():
         )
     )
 
-    print("Bot started...")
+    print("Bot is running...")
 
     app.run_polling()
 

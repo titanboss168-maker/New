@@ -1,8 +1,8 @@
-import os
+import asyncio
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
 
-BOT_TOKEN = os.getenv("8934609911:AAFJ1_IOCq5C-IOjyHnCM69kH_LggVi8H4c")
-CHANNEL_ID = os.getenv("@MRBEAN_GAMING")
+BOT_TOKEN = "8934609911:AAEmljKQ4s6lDD_nUlw57P0miQTbBMDshEY"
+CHANNEL_ID = "@MRBEAN_GAMING"
 
 BUTTON_TEXT = "🎁 𝐆𝐈𝐅𝐓 𝐂𝐎𝐃𝐄"
 BUTTON_URL = "https://t.me/+sbu2FCVFGshjOTg1"
@@ -13,23 +13,25 @@ POST_TEXT = """
 Check out the offer below 👇
 """
 
-def main():
-    bot = Bot(token=BOT_TOKEN)
 
-    button = InlineKeyboardButton(
-        text=BUTTON_TEXT,
-        url=BUTTON_URL
-    )
+async def main():
+    async with Bot(token=BOT_TOKEN) as bot:
 
-    keyboard = InlineKeyboardMarkup([
-        [button]
-    ])
+        button = InlineKeyboardButton(
+            text=BUTTON_TEXT,
+            url=BUTTON_URL
+        )
 
-    bot.send_message(
-        chat_id=CHANNEL_ID,
-        text=POST_TEXT,
-        reply_markup=keyboard
-    )
+        keyboard = InlineKeyboardMarkup([
+            [button]
+        ])
+
+        await bot.send_message(
+            chat_id=CHANNEL_ID,
+            text=POST_TEXT,
+            reply_markup=keyboard
+        )
+
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

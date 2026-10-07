@@ -21,7 +21,7 @@ from telegram.ext import (
 
 BOT_TOKEN = "8934609911:AAEmljKQ4s6lDD_nUlw57P0miQTbBMDshEY"
 
-CHANNEL_ID = "@MRBEAN_GAMING"
+CHANNEL_ID = "@RaxiWin_Jaykesh"
 
 # Apna numeric Telegram User ID yahan daalo
 ADMIN_ID = 1966787250
